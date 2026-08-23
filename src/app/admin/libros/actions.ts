@@ -10,6 +10,10 @@ export type BookInput = {
   category_id: string | null;
   total_pages: number | null;
   active: boolean;
+  genres: string[];
+  language: "es" | "en";
+  synopsis: string | null;
+  points_base: number;
 };
 
 async function requireAdminFamily() {

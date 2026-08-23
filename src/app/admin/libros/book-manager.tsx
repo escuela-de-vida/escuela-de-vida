@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
+import { Textarea } from "@/components/ui/textarea";
 import {
   Select,
   SelectContent,
@@ -33,7 +34,7 @@ import type { BookInput } from "./actions";
 import { createBook, updateBook, deleteBook } from "./actions";
 
 type Category = { id: string; name: string; color: string };
-type Book = BookInput & { id: string };
+export type Book = BookInput & { id: string };
 
 const NO_CATEGORY = "__none__";
 
@@ -43,6 +44,10 @@ const EMPTY: BookInput = {
   category_id: null,
   total_pages: null,
   active: true,
+  genres: [],
+  language: "es",
+  synopsis: "",
+  points_base: 20,
 };
 
 export function BookManager({
@@ -75,6 +80,10 @@ export function BookManager({
       category_id: book.category_id,
       total_pages: book.total_pages,
       active: book.active,
+      genres: book.genres,
+      language: book.language,
+      synopsis: book.synopsis,
+      points_base: book.points_base,
     });
     setError("");
     setOpen(true);
@@ -188,6 +197,69 @@ export function BookManager({
                     }
                   />
                 </div>
+              </div>
+              <div className="flex flex-col gap-2">
+                <Label htmlFor="synopsis">Sinopsis corta</Label>
+                <Textarea
+                  id="synopsis"
+                  value={form.synopsis ?? ""}
+                  onChange={(e) =>
+                    setForm({ ...form, synopsis: e.target.value })
+                  }
+                />
+              </div>
+              <div className="grid grid-cols-3 gap-4">
+                <div className="col-span-2 flex flex-col gap-2">
+                  <Label htmlFor="genres">Géneros (separados por coma)</Label>
+                  <Input
+                    id="genres"
+                    placeholder="aventura, formacion_caracter"
+                    value={form.genres.join(", ")}
+                    onChange={(e) =>
+                      setForm({
+                        ...form,
+                        genres: e.target.value
+                          .split(",")
+                          .map((g) => g.trim().toLowerCase().replace(/\s+/g, "_"))
+                          .filter(Boolean),
+                      })
+                    }
+                  />
+                </div>
+                <div className="flex flex-col gap-2">
+                  <Label>Idioma</Label>
+                  <Select
+                    value={form.language}
+                    onValueChange={(v) =>
+                      setForm({
+                        ...form,
+                        language: (v ?? "es") as BookInput["language"],
+                      })
+                    }
+                  >
+                    <SelectTrigger>
+                      <SelectValue>
+                        {(v: string) => (v === "en" ? "Inglés" : "Español")}
+                      </SelectValue>
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="es">Español</SelectItem>
+                      <SelectItem value="en">Inglés</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+              <div className="flex flex-col gap-2">
+                <Label htmlFor="points">Puntos por reseña completada</Label>
+                <Input
+                  id="points"
+                  type="number"
+                  min={0}
+                  value={form.points_base}
+                  onChange={(e) =>
+                    setForm({ ...form, points_base: Number(e.target.value) })
+                  }
+                />
               </div>
               <div className="flex items-center justify-between rounded-lg border border-border px-3 py-2">
                 <Label htmlFor="active" className="cursor-pointer">

@@ -191,7 +191,11 @@ export type Database = {
           category_id: string | null
           created_at: string
           family_id: string
+          genres: string[]
           id: string
+          language: string
+          points_base: number
+          synopsis: string | null
           title: string
           total_pages: number | null
         }
@@ -201,7 +205,11 @@ export type Database = {
           category_id?: string | null
           created_at?: string
           family_id: string
+          genres?: string[]
           id?: string
+          language?: string
+          points_base?: number
+          synopsis?: string | null
           title: string
           total_pages?: number | null
         }
@@ -211,7 +219,11 @@ export type Database = {
           category_id?: string | null
           created_at?: string
           family_id?: string
+          genres?: string[]
           id?: string
+          language?: string
+          points_base?: number
+          synopsis?: string | null
           title?: string
           total_pages?: number | null
         }
@@ -242,6 +254,7 @@ export type Database = {
           icon: string | null
           id: string
           name: string
+          slug: string
           supports_tracks: boolean
           type: string
         }
@@ -254,6 +267,7 @@ export type Database = {
           icon?: string | null
           id?: string
           name: string
+          slug: string
           supports_tracks?: boolean
           type: string
         }
@@ -266,6 +280,7 @@ export type Database = {
           icon?: string | null
           id?: string
           name?: string
+          slug?: string
           supports_tracks?: boolean
           type?: string
         }
@@ -597,6 +612,71 @@ export type Database = {
           },
         ]
       }
+      student_module_progress: {
+        Row: {
+          completed_at: string | null
+          created_at: string
+          family_id: string
+          id: string
+          module_id: string
+          points_awarded: number | null
+          status: string
+          student_id: string
+          submission_id: string | null
+        }
+        Insert: {
+          completed_at?: string | null
+          created_at?: string
+          family_id: string
+          id?: string
+          module_id: string
+          points_awarded?: number | null
+          status?: string
+          student_id: string
+          submission_id?: string | null
+        }
+        Update: {
+          completed_at?: string | null
+          created_at?: string
+          family_id?: string
+          id?: string
+          module_id?: string
+          points_awarded?: number | null
+          status?: string
+          student_id?: string
+          submission_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "student_module_progress_family_id_fkey"
+            columns: ["family_id"]
+            isOneToOne: false
+            referencedRelation: "families"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "student_module_progress_module_id_fkey"
+            columns: ["module_id"]
+            isOneToOne: false
+            referencedRelation: "subject_modules"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "student_module_progress_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "student_module_progress_submission_id_fkey"
+            columns: ["submission_id"]
+            isOneToOne: false
+            referencedRelation: "submissions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       student_tracks: {
         Row: {
           assigned_by: string | null
@@ -666,6 +746,63 @@ export type Database = {
           },
         ]
       }
+      subject_modules: {
+        Row: {
+          active: boolean
+          category_id: string
+          content: Json
+          created_at: string
+          description: string | null
+          family_id: string
+          id: string
+          order_index: number
+          points: number
+          stage: string | null
+          title: string
+        }
+        Insert: {
+          active?: boolean
+          category_id: string
+          content?: Json
+          created_at?: string
+          description?: string | null
+          family_id: string
+          id?: string
+          order_index?: number
+          points?: number
+          stage?: string | null
+          title: string
+        }
+        Update: {
+          active?: boolean
+          category_id?: string
+          content?: Json
+          created_at?: string
+          description?: string | null
+          family_id?: string
+          id?: string
+          order_index?: number
+          points?: number
+          stage?: string | null
+          title?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "subject_modules_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "categories"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "subject_modules_family_id_fkey"
+            columns: ["family_id"]
+            isOneToOne: false
+            referencedRelation: "families"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       submissions: {
         Row: {
           admin_override_comment: string | null
@@ -679,7 +816,7 @@ export type Database = {
           metadata: Json
           reviewed_by: string | null
           student_id: string
-          task_instance_id: string
+          task_instance_id: string | null
           text_content: string | null
           type: string
         }
@@ -695,7 +832,7 @@ export type Database = {
           metadata?: Json
           reviewed_by?: string | null
           student_id: string
-          task_instance_id: string
+          task_instance_id?: string | null
           text_content?: string | null
           type: string
         }
@@ -711,7 +848,7 @@ export type Database = {
           metadata?: Json
           reviewed_by?: string | null
           student_id?: string
-          task_instance_id?: string
+          task_instance_id?: string | null
           text_content?: string | null
           type?: string
         }

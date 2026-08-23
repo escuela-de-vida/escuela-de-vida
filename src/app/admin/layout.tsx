@@ -1,12 +1,13 @@
 import { redirect } from "next/navigation";
 import Link from "next/link";
-import { Compass, Shapes, ListTodo, BookOpen } from "lucide-react";
+import { Compass, Shapes, ListTodo, BookOpen, Milestone } from "lucide-react";
 import { getCurrentProfile } from "@/lib/auth/current-user";
 import { Badge } from "@/components/ui/badge";
 
 const NAV = [
   { href: "/admin/categorias", label: "Categorías", icon: Shapes },
   { href: "/admin/tareas", label: "Tareas", icon: ListTodo },
+  { href: "/admin/modulos", label: "Módulos", icon: Milestone },
   { href: "/admin/libros", label: "Libros", icon: BookOpen },
 ] as const;
 

@@ -1,5 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
-import { BookManager } from "./book-manager";
+import { BookManager, type Book } from "./book-manager";
 
 export default async function LibrosPage() {
   const supabase = await createClient();
@@ -12,5 +12,7 @@ export default async function LibrosPage() {
       .order("display_order", { ascending: true }),
   ]);
 
-  return <BookManager books={books ?? []} categories={categories ?? []} />;
+  return (
+    <BookManager books={(books ?? []) as Book[]} categories={categories ?? []} />
+  );
 }

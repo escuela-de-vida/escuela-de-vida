@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { getCurrentProfile } from "@/lib/auth/current-user";
+import { slugify } from "@/lib/slugify";
 
 export type CategoryInput = {
   name: string;
@@ -25,11 +26,24 @@ async function requireAdminFamily() {
 export async function createCategory(input: CategoryInput) {
   const profile = await requireAdminFamily();
   const supabase = await createClient();
-  const { error } = await supabase
-    .from("categories")
-    .insert({ ...input, family_id: profile.family_id });
+  const baseSlug = slugify(input.name) || "materia";
+  let slug = baseSlug;
+  let attempt = 0;
 
-  if (error) throw new Error(error.message);
+  for (;;) {
+    const { error } = await supabase
+      .from("categories")
+      .insert({ ...input, family_id: profile.family_id, slug });
+
+    if (!error) break;
+    if (error.code === "23505" && attempt < 5) {
+      attempt += 1;
+      slug = `${baseSlug}-${attempt + 1}`;
+      continue;
+    }
+    throw new Error(error.message);
+  }
+
   revalidatePath("/admin/categorias");
 }
 

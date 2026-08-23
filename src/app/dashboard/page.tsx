@@ -1,5 +1,6 @@
 import { redirect } from "next/navigation";
-import { Compass, Flame, Settings, Sparkles } from "lucide-react";
+import Link from "next/link";
+import { Compass, Flame, Settings, Sparkles, GraduationCap } from "lucide-react";
 import { buttonVariants } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { SignOutButton } from "./sign-out-button";
@@ -129,6 +130,13 @@ export default async function DashboardPage({
           </span>
         </div>
         <div className="flex items-center gap-2">
+          <Link
+            href="/materias"
+            className="flex items-center gap-1.5 rounded-full px-3 py-1.5 text-[14px] font-medium text-muted-foreground transition-spring duration-200 hover:bg-muted hover:text-foreground"
+          >
+            <GraduationCap className="h-4 w-4" />
+            Materias
+          </Link>
           <Badge variant="secondary" className="gap-1.5 rounded-full px-3 py-1">
             <Flame className="h-3.5 w-3.5 text-[var(--category-creatividad)]" />
             {streak} {streak === 1 ? "día" : "días"}
