@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Compass, Mail, Loader2, CheckCircle2 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -137,6 +137,16 @@ function AdminLogin() {
 }
 
 export default function LoginPage() {
+  useEffect(() => {
+    // Los links de invitación/recuperación generados por el admin ignoran
+    // cualquier redirect_to custom y siempre caen en el Site URL — llegan acá
+    // con el token en el hash. Los mandamos a completar su contraseña.
+    const hash = window.location.hash;
+    if (hash.includes("access_token") && (hash.includes("type=invite") || hash.includes("type=recovery"))) {
+      window.location.replace(`/auth/set-password${hash}`);
+    }
+  }, []);
+
   return (
     <div className="flex min-h-full flex-1 items-center justify-center px-6 py-16">
       <div className="flex w-full max-w-sm flex-col gap-8">
