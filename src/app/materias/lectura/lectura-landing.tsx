@@ -39,6 +39,11 @@ export function LecturaLanding({
   const [review, setReview] = useState("");
   const [saving, setSaving] = useState(false);
   const [busyId, setBusyId] = useState<string | null>(null);
+  const [result, setResult] = useState<{
+    points: number;
+    pending: boolean;
+    feedback: string | null;
+  } | null>(null);
 
   async function handleStart(book: BookWithProgress) {
     setBusyId(book.id);
@@ -52,6 +57,7 @@ export function LecturaLanding({
   function openReview(book: BookWithProgress) {
     setReviewFor(book);
     setReview("");
+    setResult(null);
   }
 
   async function handleFinish(e: React.FormEvent) {
@@ -59,8 +65,8 @@ export function LecturaLanding({
     if (!reviewFor) return;
     setSaving(true);
     try {
-      await finishReading(reviewFor.id, review);
-      setReviewFor(null);
+      const outcome = await finishReading(reviewFor.id, review);
+      setResult(outcome);
     } finally {
       setSaving(false);
     }
@@ -149,36 +155,64 @@ export function LecturaLanding({
         );
       })}
 
-      <Dialog open={!!reviewFor} onOpenChange={(open) => !open && setReviewFor(null)}>
+      <Dialog
+        open={!!reviewFor}
+        onOpenChange={(open) => !open && setReviewFor(null)}
+      >
         <DialogContent>
           <DialogHeader>
             <DialogTitle>{reviewFor?.title}</DialogTitle>
           </DialogHeader>
-          <form onSubmit={handleFinish} className="flex flex-col gap-4">
-            <div className="rounded-lg bg-muted p-3 text-sm text-muted-foreground">
-              <p className="mb-1 font-medium text-foreground">
-                Para pensar (no hace falta contestar todas):
-              </p>
-              <ul className="list-disc pl-4">
-                {questions.map((q, i) => (
-                  <li key={i}>{q}</li>
-                ))}
-              </ul>
+          {result ? (
+            <div className="flex flex-col gap-4">
+              <div className="flex flex-col items-center gap-1 py-2 text-center">
+                <CheckCircle2 className="h-8 w-8" style={{ color }} />
+                <p className="text-[17px] font-semibold">
+                  +{result.points} pts
+                </p>
+              </div>
+              {result.feedback && (
+                <p className="rounded-lg bg-muted p-3 text-sm text-muted-foreground">
+                  {result.feedback}
+                </p>
+              )}
+              {result.pending && (
+                <p className="text-[13px] text-muted-foreground">
+                  Un adulto va a revisar tu reseña — los puntos ya son tuyos
+                  igual, esto es solo para el feedback.
+                </p>
+              )}
+              <DialogFooter>
+                <Button onClick={() => setReviewFor(null)}>Listo</Button>
+              </DialogFooter>
             </div>
-            <Textarea
-              value={review}
-              onChange={(e) => setReview(e.target.value)}
-              placeholder="Contanos qué te pareció el libro..."
-              className="min-h-32"
-              required
-            />
-            <DialogFooter>
-              <Button type="submit" disabled={saving} className="gap-2">
-                {saving && <Loader2 className="h-4 w-4 animate-spin" />}
-                Guardar reseña
-              </Button>
-            </DialogFooter>
-          </form>
+          ) : (
+            <form onSubmit={handleFinish} className="flex flex-col gap-4">
+              <div className="rounded-lg bg-muted p-3 text-sm text-muted-foreground">
+                <p className="mb-1 font-medium text-foreground">
+                  Para pensar (no hace falta contestar todas):
+                </p>
+                <ul className="list-disc pl-4">
+                  {questions.map((q, i) => (
+                    <li key={i}>{q}</li>
+                  ))}
+                </ul>
+              </div>
+              <Textarea
+                value={review}
+                onChange={(e) => setReview(e.target.value)}
+                placeholder="Contanos qué te pareció el libro..."
+                className="min-h-32"
+                required
+              />
+              <DialogFooter>
+                <Button type="submit" disabled={saving} className="gap-2">
+                  {saving && <Loader2 className="h-4 w-4 animate-spin" />}
+                  Guardar reseña
+                </Button>
+              </DialogFooter>
+            </form>
+          )}
         </DialogContent>
       </Dialog>
     </div>

@@ -125,6 +125,8 @@ export type Database = {
       }
       book_progress: {
         Row: {
+          admin_override_comment: string | null
+          admin_override_score: number | null
           ai_evaluation: Json | null
           book_id: string
           created_at: string
@@ -133,10 +135,13 @@ export type Database = {
           id: string
           pages_read: number
           review_text: string | null
+          reviewed_by: string | null
           status: string
           student_id: string
         }
         Insert: {
+          admin_override_comment?: string | null
+          admin_override_score?: number | null
           ai_evaluation?: Json | null
           book_id: string
           created_at?: string
@@ -145,10 +150,13 @@ export type Database = {
           id?: string
           pages_read?: number
           review_text?: string | null
+          reviewed_by?: string | null
           status?: string
           student_id: string
         }
         Update: {
+          admin_override_comment?: string | null
+          admin_override_score?: number | null
           ai_evaluation?: Json | null
           book_id?: string
           created_at?: string
@@ -157,6 +165,7 @@ export type Database = {
           id?: string
           pages_read?: number
           review_text?: string | null
+          reviewed_by?: string | null
           status?: string
           student_id?: string
         }
@@ -173,6 +182,13 @@ export type Database = {
             columns: ["family_id"]
             isOneToOne: false
             referencedRelation: "families"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "book_progress_reviewed_by_fkey"
+            columns: ["reviewed_by"]
+            isOneToOne: false
+            referencedRelation: "users"
             referencedColumns: ["id"]
           },
           {
@@ -1138,6 +1154,7 @@ export type Database = {
           errors: Json
           family_id: string
           id: string
+          points_awarded: number
           student_id: string
           typed_text: string
           wpm: number
@@ -1150,6 +1167,7 @@ export type Database = {
           errors?: Json
           family_id: string
           id?: string
+          points_awarded?: number
           student_id: string
           typed_text: string
           wpm: number
@@ -1162,6 +1180,7 @@ export type Database = {
           errors?: Json
           family_id?: string
           id?: string
+          points_awarded?: number
           student_id?: string
           typed_text?: string
           wpm?: number

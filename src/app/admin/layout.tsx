@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
 import Link from "next/link";
-import { Compass, Shapes, ListTodo, BookOpen, Milestone, Trophy } from "lucide-react";
+import { Compass, Shapes, ListTodo, BookOpen, Milestone, Trophy, ClipboardCheck } from "lucide-react";
 import { getCurrentProfile } from "@/lib/auth/current-user";
 import { Badge } from "@/components/ui/badge";
 
@@ -9,6 +9,7 @@ const NAV = [
   { href: "/admin/tareas", label: "Tareas", icon: ListTodo },
   { href: "/admin/modulos", label: "Módulos", icon: Milestone },
   { href: "/admin/libros", label: "Libros", icon: BookOpen },
+  { href: "/admin/evidencias", label: "Evidencias", icon: ClipboardCheck },
 ] as const;
 
 export default async function AdminLayout({

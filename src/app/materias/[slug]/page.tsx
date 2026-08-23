@@ -10,6 +10,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ModulePath } from "./module-path";
 import { ModuleInteraction } from "./module-interaction";
 import { LecturaLanding, type BookWithProgress } from "../lectura/lectura-landing";
+import { TypingWidget, type TypingHistoryRow } from "../mecanografia/typing-widget";
 
 async function getBooksWithProgress(
   familyId: string,
@@ -67,6 +68,7 @@ export default async function MateriaLandingPage({
 
   const isStudent = profile.role === "student";
   const isLectura = slug === "lectura";
+  const isComunicacion = slug === "comunicacion";
 
   const header = (
     <header className="glass-panel sticky top-0 z-10 flex items-center gap-3 px-8 py-4">
@@ -120,6 +122,36 @@ export default async function MateriaLandingPage({
               questions={questions}
               color={category.color}
             />
+          )}
+        </main>
+      </div>
+    );
+  }
+
+  if (isComunicacion) {
+    let history: TypingHistoryRow[] = [];
+    if (isStudent) {
+      const supabase = await createClient();
+      const { data } = await supabase
+        .from("typing_sessions")
+        .select("wpm, accuracy_pct, created_at")
+        .eq("student_id", profile.id)
+        .order("created_at", { ascending: false })
+        .limit(30);
+      history = data ?? [];
+    }
+
+    return (
+      <div className="flex min-h-full flex-1 flex-col">
+        {header}
+        <main className="mx-auto flex w-full max-w-2xl flex-1 flex-col gap-6 px-8 py-10">
+          {!isStudent ? (
+            <p className="rounded-lg bg-muted px-4 py-3 text-sm text-muted-foreground">
+              Vista de admin — la práctica de mecanografía es para los
+              alumnos.
+            </p>
+          ) : (
+            <TypingWidget history={history} color={category.color} />
           )}
         </main>
       </div>

@@ -5,6 +5,7 @@ import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { getCurrentProfile } from "@/lib/auth/current-user";
 import { checkAndAwardBadges } from "@/lib/gamification/badges";
+import { evaluateReadingReview } from "@/lib/ai/evaluate-reading";
 
 export async function startReading(bookId: string) {
   const profile = await getCurrentProfile();
@@ -34,11 +35,25 @@ export async function finishReading(bookId: string, reviewText: string) {
 
   const { data: book } = await supabase
     .from("books")
-    .select("points_base")
+    .select("title, points_base")
     .eq("id", bookId)
     .single();
 
-  const points = book?.points_base ?? 20;
+  const pointsBase = book?.points_base ?? 20;
+  const trimmedReview = reviewText.trim();
+
+  const evaluation = await evaluateReadingReview({
+    bookTitle: book?.title ?? "este libro",
+    reviewText: trimmedReview,
+  });
+
+  const points = evaluation
+    ? Math.max(1, Math.round((pointsBase * evaluation.percentage) / 100))
+    : pointsBase;
+
+  const aiEvaluation = evaluation
+    ? { ...evaluation, pending: false }
+    : { pending: true };
 
   const { error: progressError } = await supabase.from("book_progress").upsert(
     {
@@ -46,7 +61,8 @@ export async function finishReading(bookId: string, reviewText: string) {
       student_id: profile.id,
       book_id: bookId,
       status: "leido",
-      review_text: reviewText.trim(),
+      review_text: trimmedReview,
+      ai_evaluation: aiEvaluation,
       finished_at: new Date().toISOString(),
     },
     { onConflict: "student_id,book_id" },
@@ -61,12 +77,18 @@ export async function finishReading(bookId: string, reviewText: string) {
     source_type: "module",
     source_id: bookId,
     points,
-    reason: "Reseña de lectura completada",
+    reason: evaluation
+      ? "Reseña de lectura completada (evaluación IA)"
+      : "Reseña de lectura completada (pendiente de revisión manual)",
   });
   if (ledgerError) throw new Error(ledgerError.message);
 
   await checkAndAwardBadges(profile.id, profile.family_id);
 
   revalidatePath("/materias/lectura");
-  return { points };
+  return {
+    points,
+    pending: !evaluation,
+    feedback: evaluation?.feedback ?? null,
+  };
 }
