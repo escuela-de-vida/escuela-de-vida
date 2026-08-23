@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
 import Link from "next/link";
-import { Compass, Shapes, ListTodo, BookOpen, Milestone } from "lucide-react";
+import { Compass, Shapes, ListTodo, BookOpen, Milestone, Trophy } from "lucide-react";
 import { getCurrentProfile } from "@/lib/auth/current-user";
 import { Badge } from "@/components/ui/badge";
 
@@ -44,6 +44,13 @@ export default async function AdminLayout({
             Admin
           </Badge>
         </div>
+        <Link
+          href="/ranking"
+          className="flex items-center gap-1.5 text-[14px] text-muted-foreground hover:text-foreground"
+        >
+          <Trophy className="h-4 w-4" />
+          Ranking
+        </Link>
       </header>
 
       <div className="mx-auto flex w-full max-w-5xl flex-1 gap-10 px-8 py-10">

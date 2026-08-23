@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
 import Link from "next/link";
-import { Compass, Flame, Settings, Sparkles, GraduationCap } from "lucide-react";
+import { Compass, Flame, Settings, Sparkles, GraduationCap, Trophy } from "lucide-react";
 import { buttonVariants } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { SignOutButton } from "./sign-out-button";
@@ -137,14 +137,25 @@ export default async function DashboardPage({
             <GraduationCap className="h-4 w-4" />
             Materias
           </Link>
-          <Badge variant="secondary" className="gap-1.5 rounded-full px-3 py-1">
-            <Flame className="h-3.5 w-3.5 text-[var(--category-creatividad)]" />
-            {streak} {streak === 1 ? "día" : "días"}
-          </Badge>
-          <Badge variant="secondary" className="gap-1.5 rounded-full px-3 py-1">
-            <Sparkles className="h-3.5 w-3.5 text-[var(--category-mente)]" />
-            {points} pts
-          </Badge>
+          <Link href="/perfil">
+            <Badge variant="secondary" className="gap-1.5 rounded-full px-3 py-1">
+              <Flame className="h-3.5 w-3.5 text-[var(--category-creatividad)]" />
+              {streak} {streak === 1 ? "día" : "días"}
+            </Badge>
+          </Link>
+          <Link href="/perfil">
+            <Badge variant="secondary" className="gap-1.5 rounded-full px-3 py-1">
+              <Sparkles className="h-3.5 w-3.5 text-[var(--category-mente)]" />
+              {points} pts
+            </Badge>
+          </Link>
+          <Link
+            href="/ranking"
+            aria-label="Ranking"
+            className="flex h-7 w-7 items-center justify-center rounded-full text-muted-foreground transition-spring duration-200 hover:bg-muted hover:text-foreground"
+          >
+            <Trophy className="h-3.5 w-3.5" />
+          </Link>
           <SignOutButton />
         </div>
       </header>

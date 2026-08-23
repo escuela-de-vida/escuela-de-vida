@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { getCurrentProfile } from "@/lib/auth/current-user";
+import { checkAndAwardBadges } from "@/lib/gamification/badges";
 
 export async function startReading(bookId: string) {
   const profile = await getCurrentProfile();
@@ -63,6 +64,8 @@ export async function finishReading(bookId: string, reviewText: string) {
     reason: "Reseña de lectura completada",
   });
   if (ledgerError) throw new Error(ledgerError.message);
+
+  await checkAndAwardBadges(profile.id, profile.family_id);
 
   revalidatePath("/materias/lectura");
   return { points };

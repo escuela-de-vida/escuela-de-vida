@@ -7,6 +7,7 @@ import { getCurrentProfile } from "@/lib/auth/current-user";
 import { findOriginalScheduledDate } from "@/lib/task-engine/chain";
 import { daysBetween, pointsForDaysLate } from "@/lib/task-engine/points";
 import { toISODate } from "@/lib/dates";
+import { checkAndAwardBadges } from "@/lib/gamification/badges";
 
 export async function markTaskDone(
   taskInstanceId: string,
@@ -89,6 +90,8 @@ export async function markTaskDone(
       text_content: evidenceText.trim(),
     });
   }
+
+  await checkAndAwardBadges(profile.id, profile.family_id);
 
   revalidatePath("/dashboard");
   return { points };

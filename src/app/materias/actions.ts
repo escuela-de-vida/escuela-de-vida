@@ -5,6 +5,7 @@ import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { getCurrentProfile } from "@/lib/auth/current-user";
 import type { ModuleContent } from "@/lib/curriculum/types";
+import { checkAndAwardBadges } from "@/lib/gamification/badges";
 
 export async function completeModule(
   moduleId: string,
@@ -89,6 +90,8 @@ export async function completeModule(
     });
     if (ledgerError) throw new Error(ledgerError.message);
   }
+
+  await checkAndAwardBadges(profile.id, profile.family_id);
 
   revalidatePath("/materias");
   return { points };
