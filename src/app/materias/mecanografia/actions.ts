@@ -50,7 +50,7 @@ export async function submitTypingSession(params: {
     wpm,
     accuracy_pct: accuracyPct,
     errors,
-    duration_seconds: params.durationSeconds,
+    duration_seconds: Math.round(params.durationSeconds),
     points_awarded: points,
   });
   if (insertError) throw new Error(insertError.message);
