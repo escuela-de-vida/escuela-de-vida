@@ -138,12 +138,25 @@ function AdminLogin() {
 
 export default function LoginPage() {
   useEffect(() => {
-    // Los links de invitación/recuperación generados por el admin ignoran
-    // cualquier redirect_to custom y siempre caen en el Site URL — llegan acá
-    // con el token en el hash. Los mandamos a completar su contraseña.
+    // Los links generados por el admin (o abiertos en un dispositivo/navegador
+    // distinto al que pidió el magic link, donde el SDK no autodetecta la
+    // sesión) llegan acá con el token en el hash en vez de redirigir solos.
     const hash = window.location.hash;
-    if (hash.includes("access_token") && (hash.includes("type=invite") || hash.includes("type=recovery"))) {
+    if (!hash.includes("access_token")) return;
+
+    if (hash.includes("type=invite") || hash.includes("type=recovery")) {
       window.location.replace(`/auth/set-password${hash}`);
+      return;
+    }
+
+    const params = new URLSearchParams(hash.slice(1));
+    const access_token = params.get("access_token");
+    const refresh_token = params.get("refresh_token");
+    if (access_token && refresh_token) {
+      const supabase = createClient();
+      supabase.auth
+        .setSession({ access_token, refresh_token })
+        .then(() => window.location.replace("/dashboard"));
     }
   }, []);
 
