@@ -14,7 +14,7 @@ export type DailyMessage = {
 /**
  * Mensaje diario del mentor (sección 5.2) — se dispara en el primer login
  * del día. Armado con datos reales del alumno (sección 8: hoy vive como
- * plantilla determinística; cuando haya ANTHROPIC_API_KEY se puede sumar
+ * plantilla determinística; cuando haya GEMINI_API_KEY se puede sumar
  * una pasada de Claude encima de este mismo esqueleto sin cambiar el resto
  * del flujo).
  */

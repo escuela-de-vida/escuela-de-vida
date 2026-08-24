@@ -1,65 +1,56 @@
-import Anthropic from "@anthropic-ai/sdk";
+import { GoogleGenAI } from "@google/genai";
 
-let client: Anthropic | null | undefined;
+let client: GoogleGenAI | null | undefined;
 
 /**
- * Devuelve null (en vez de lanzar) si falta ANTHROPIC_API_KEY, para que toda
+ * Devuelve null (en vez de lanzar) si falta GEMINI_API_KEY, para que toda
  * evaluación IA pueda degradarse a "pendiente de revisión manual" en vez de
  * romper el flujo del alumno (sección 8.2, fase 6).
  */
-export function getAnthropicClient(): Anthropic | null {
+export function getGeminiClient(): GoogleGenAI | null {
   if (client !== undefined) return client;
-  const apiKey = process.env.ANTHROPIC_API_KEY;
-  client = apiKey ? new Anthropic({ apiKey }) : null;
+  const apiKey = process.env.GEMINI_API_KEY;
+  client = apiKey ? new GoogleGenAI({ apiKey }) : null;
   return client;
 }
 
-export const AI_MODEL = "claude-sonnet-4-5";
+export const AI_MODEL = "gemini-2.5-flash";
 
 /**
- * Pide a Claude un bloque de texto y lo parsea como JSON. Devuelve null si no
- * hay cliente configurado o si la respuesta no es JSON válido (nunca lanza:
- * el llamador siempre debe poder caer a evaluación manual).
+ * Pide a Gemini un objeto JSON estructurado (responseMimeType: json) y lo
+ * parsea. Devuelve null si no hay cliente configurado o si la respuesta no
+ * es JSON válido — el llamador siempre debe poder caer a evaluación manual.
  */
 export async function evaluateAsJson<T>(params: {
   system: string;
   prompt: string;
   images?: { mediaType: string; data: string }[];
 }): Promise<T | null> {
-  const anthropic = getAnthropicClient();
-  if (!anthropic) return null;
+  const ai = getGeminiClient();
+  if (!ai) return null;
 
-  const content: Anthropic.MessageParam["content"] = [];
+  const parts: (
+    | { text: string }
+    | { inlineData: { mimeType: string; data: string } }
+  )[] = [];
   for (const image of params.images ?? []) {
-    content.push({
-      type: "image",
-      source: {
-        type: "base64",
-        media_type: image.mediaType as
-          | "image/jpeg"
-          | "image/png"
-          | "image/gif"
-          | "image/webp",
-        data: image.data,
-      },
-    });
+    parts.push({ inlineData: { mimeType: image.mediaType, data: image.data } });
   }
-  content.push({ type: "text", text: params.prompt });
+  parts.push({ text: params.prompt });
 
   try {
-    const message = await anthropic.messages.create({
+    const response = await ai.models.generateContent({
       model: AI_MODEL,
-      max_tokens: 1024,
-      system: params.system,
-      messages: [{ role: "user", content }],
+      contents: [{ role: "user", parts }],
+      config: {
+        systemInstruction: params.system,
+        responseMimeType: "application/json",
+      },
     });
 
-    const block = message.content.find((b) => b.type === "text");
-    if (!block || block.type !== "text") return null;
-
-    const match = block.text.match(/\{[\s\S]*\}/);
-    if (!match) return null;
-    return JSON.parse(match[0]) as T;
+    const text = response.text;
+    if (!text) return null;
+    return JSON.parse(text) as T;
   } catch (err) {
     console.error("evaluateAsJson error:", err);
     return null;

@@ -104,7 +104,7 @@ export function EvidenceList({ reviews }: { reviews: ReadingReview[] }) {
               {review.aiEvaluation?.pending ? (
                 <Badge variant="outline" className="gap-1.5">
                   <CircleAlert className="h-3.5 w-3.5" />
-                  Sin evaluar (falta ANTHROPIC_API_KEY)
+                  Sin evaluar (falta GEMINI_API_KEY)
                 </Badge>
               ) : (
                 <Badge variant="secondary" className="gap-1.5">

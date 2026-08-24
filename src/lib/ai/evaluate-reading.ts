@@ -21,7 +21,7 @@ nunca de examinador estricto. Reglas obligatorias:
 /**
  * Rúbrica de sección 7.2: comprensión, pensamiento crítico, esfuerzo (0-25
  * cada uno, caligrafía se omite porque la reseña es texto tipeado). Devuelve
- * null si no hay ANTHROPIC_API_KEY configurada — el llamador debe caer a
+ * null si no hay GEMINI_API_KEY configurada — el llamador debe caer a
  * revisión manual del admin en ese caso.
  */
 export async function evaluateReadingReview(params: {
