@@ -21,6 +21,7 @@ export function ModuleInteraction({
   );
   const [status, setStatus] = useState<"idle" | "saving" | "done">("idle");
   const [pointsEarned, setPointsEarned] = useState<number | null>(null);
+  const [feedback, setFeedback] = useState<string | null>(null);
   const [error, setError] = useState("");
 
   async function handleSubmit(e: React.FormEvent) {
@@ -33,6 +34,7 @@ export function ModuleInteraction({
         quizAnswers: module.content.kind === "quiz" ? answers : undefined,
       });
       setPointsEarned(result.points);
+      setFeedback(result.feedback);
       setStatus("done");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Algo salió mal.");
@@ -47,6 +49,11 @@ export function ModuleInteraction({
         <p className="text-[17px] font-semibold">
           ¡Sumaste {pointsEarned} pts!
         </p>
+        {feedback && (
+          <p className="max-w-md rounded-lg bg-muted p-3 text-left text-sm text-muted-foreground">
+            {feedback}
+          </p>
+        )}
         <p className="text-sm text-muted-foreground">
           La página se actualiza sola con el próximo módulo.
         </p>

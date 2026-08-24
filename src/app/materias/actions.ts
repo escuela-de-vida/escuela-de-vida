@@ -6,6 +6,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { getCurrentProfile } from "@/lib/auth/current-user";
 import type { ModuleContent } from "@/lib/curriculum/types";
 import { checkAndAwardBadges } from "@/lib/gamification/badges";
+import { evaluateModuleText } from "@/lib/ai/evaluate-module";
 
 export async function completeModule(
   moduleId: string,
@@ -20,7 +21,7 @@ export async function completeModule(
 
   const { data: module, error: moduleError } = await supabase
     .from("subject_modules")
-    .select("id, points, content")
+    .select("id, title, points, content")
     .eq("id", moduleId)
     .single();
 
@@ -38,6 +39,7 @@ export async function completeModule(
 
   const content = module.content as unknown as ModuleContent;
   let points = module.points;
+  let evaluation: Awaited<ReturnType<typeof evaluateModuleText>> = null;
 
   if (content.kind === "quiz" && content.quiz) {
     const answers = input.quizAnswers ?? [];
@@ -45,6 +47,20 @@ export async function completeModule(
       (q, i) => answers[i] === q.correctIndex,
     ).length;
     points = Math.round((module.points * correct) / content.quiz.length);
+  } else if (
+    (content.kind === "reflexion" || content.kind === "escritura") &&
+    content.rubric?.length &&
+    input.text?.trim()
+  ) {
+    evaluation = await evaluateModuleText({
+      moduleTitle: module.title,
+      instructions: content.instructions,
+      rubric: content.rubric,
+      studentText: input.text.trim(),
+    });
+    if (evaluation) {
+      points = Math.max(1, Math.round((module.points * evaluation.percentage) / 100));
+    }
   }
 
   const { data: progressRow, error: progressError } = await supabase
@@ -73,6 +89,12 @@ export async function completeModule(
       text_content: input.text.trim(),
       task_instance_id: null,
       metadata: { subject_module_id: moduleId },
+      ai_evaluation: evaluation
+        ? { ...evaluation, pending: false }
+        : content.rubric?.length
+          ? { pending: true }
+          : null,
+      ai_evaluated_at: evaluation ? new Date().toISOString() : null,
     });
   }
 
@@ -86,7 +108,9 @@ export async function completeModule(
       source_type: "module",
       source_id: progressRow?.id ?? moduleId,
       points,
-      reason: "Módulo de materia completado",
+      reason: evaluation
+        ? "Módulo de materia completado (evaluación IA)"
+        : "Módulo de materia completado",
     });
     if (ledgerError) throw new Error(ledgerError.message);
   }
@@ -94,5 +118,5 @@ export async function completeModule(
   await checkAndAwardBadges(profile.id, profile.family_id);
 
   revalidatePath("/materias");
-  return { points };
+  return { points, feedback: evaluation?.feedback ?? null };
 }
