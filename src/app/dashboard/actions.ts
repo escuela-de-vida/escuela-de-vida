@@ -8,10 +8,13 @@ import { findOriginalScheduledDate } from "@/lib/task-engine/chain";
 import { daysBetween, pointsForDaysLate } from "@/lib/task-engine/points";
 import { toISODate } from "@/lib/dates";
 import { checkAndAwardBadges } from "@/lib/gamification/badges";
+import { uploadEvidencePhoto } from "@/lib/storage/evidence";
+import { evaluateTaskPhoto } from "@/lib/ai/evaluate-photo";
 
 export async function markTaskDone(
   taskInstanceId: string,
   evidenceText?: string,
+  evidencePhoto?: { base64Data: string; mimeType: string },
 ) {
   const profile = await getCurrentProfile();
   if (!profile || profile.role !== "student") {
@@ -23,7 +26,7 @@ export async function markTaskDone(
   const { data: instance, error: fetchError } = await supabase
     .from("task_instances")
     .select(
-      "id, scheduled_date, status, student_id, template_id, task_templates ( points_base )",
+      "id, scheduled_date, status, student_id, template_id, task_templates ( title, description, points_base )",
     )
     .eq("id", taskInstanceId)
     .eq("student_id", profile.id)
@@ -91,10 +94,39 @@ export async function markTaskDone(
     });
   }
 
+  let photoFeedback: string | null = null;
+
+  if (evidencePhoto) {
+    const path = await uploadEvidencePhoto({
+      familyId: profile.family_id,
+      studentId: profile.id,
+      base64Data: evidencePhoto.base64Data,
+      mimeType: evidencePhoto.mimeType,
+    });
+    const evaluation = await evaluateTaskPhoto({
+      taskTitle: template?.title ?? "Tarea",
+      taskDescription: template?.description ?? null,
+      imageBase64: evidencePhoto.base64Data,
+      imageMimeType: evidencePhoto.mimeType,
+    });
+    await supabase.from("submissions").insert({
+      family_id: profile.family_id,
+      task_instance_id: instance.id,
+      student_id: profile.id,
+      type: "foto",
+      file_url: path,
+      ai_evaluation: evaluation
+        ? { ...evaluation, pending: false }
+        : { pending: true },
+      ai_evaluated_at: evaluation ? new Date().toISOString() : null,
+    });
+    photoFeedback = evaluation?.feedback ?? null;
+  }
+
   await checkAndAwardBadges(profile.id, profile.family_id);
 
   revalidatePath("/dashboard");
-  return { points };
+  return { points, photoFeedback };
 }
 
 export async function markNotificationRead(notificationId: string) {

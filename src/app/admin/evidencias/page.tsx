@@ -1,8 +1,10 @@
 import { redirect } from "next/navigation";
 import { getCurrentProfile } from "@/lib/auth/current-user";
 import { createClient } from "@/lib/supabase/server";
+import { getEvidenceSignedUrl } from "@/lib/storage/evidence";
 import { EvidenceList, type ReadingReview } from "./evidence-list";
 import { ModuleEvidenceList, type ModuleSubmission } from "./module-evidence-list";
+import { PhotoEvidenceList, type PhotoSubmission } from "./photo-evidence-list";
 
 export default async function EvidenciasPage() {
   const profile = await getCurrentProfile();
@@ -11,7 +13,7 @@ export default async function EvidenciasPage() {
 
   const supabase = await createClient();
 
-  const [{ data: bookRows }, { data: submissionRows }] = await Promise.all([
+  const [{ data: bookRows }, { data: submissionRows }, { data: photoRows }] = await Promise.all([
     supabase
       .from("book_progress")
       .select(
@@ -27,6 +29,13 @@ export default async function EvidenciasPage() {
       )
       .eq("type", "texto")
       .not("metadata->subject_module_id", "is", null)
+      .order("created_at", { ascending: false }),
+    supabase
+      .from("submissions")
+      .select(
+        "id, file_url, ai_evaluation, admin_override_score, admin_override_comment, created_at, student_id, task_instance_id, users:student_id ( display_name ), task_instances:task_instance_id ( points_awarded, task_templates ( title ) )",
+      )
+      .eq("type", "foto")
       .order("created_at", { ascending: false }),
   ]);
 
@@ -94,6 +103,34 @@ export default async function EvidenciasPage() {
     })
     .filter((s): s is ModuleSubmission => s !== null);
 
+  const photoSubmissions: PhotoSubmission[] = await Promise.all(
+    (photoRows ?? []).map(async (p) => {
+      const student = Array.isArray(p.users) ? p.users[0] : p.users;
+      const taskInstance = Array.isArray(p.task_instances)
+        ? p.task_instances[0]
+        : p.task_instances;
+      const template = taskInstance
+        ? Array.isArray(taskInstance.task_templates)
+          ? taskInstance.task_templates[0]
+          : taskInstance.task_templates
+        : null;
+
+      return {
+        id: p.id,
+        studentId: p.student_id,
+        studentName: student?.display_name ?? "Alumno",
+        taskInstanceId: p.task_instance_id ?? "",
+        taskTitle: template?.title ?? "Tarea",
+        currentPoints: taskInstance?.points_awarded ?? 0,
+        signedUrl: p.file_url ? await getEvidenceSignedUrl(p.file_url) : null,
+        aiEvaluation: p.ai_evaluation as PhotoSubmission["aiEvaluation"],
+        adminOverrideScore: p.admin_override_score,
+        adminOverrideComment: p.admin_override_comment,
+        createdAt: p.created_at,
+      };
+    }),
+  );
+
   return (
     <div className="flex flex-col gap-8">
       <div>
@@ -129,6 +166,19 @@ export default async function EvidenciasPage() {
           </p>
         ) : (
           <ModuleEvidenceList submissions={moduleSubmissions} />
+        )}
+      </div>
+
+      <div className="flex flex-col gap-3">
+        <h2 className="text-[15px] font-medium text-muted-foreground">
+          Fotos de tareas
+        </h2>
+        {photoSubmissions.length === 0 ? (
+          <p className="text-sm text-muted-foreground">
+            Todavía no hay fotos para revisar.
+          </p>
+        ) : (
+          <PhotoEvidenceList submissions={photoSubmissions} />
         )}
       </div>
     </div>

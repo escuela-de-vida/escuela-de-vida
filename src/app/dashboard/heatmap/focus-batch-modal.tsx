@@ -1,11 +1,23 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { Compass, Loader2, X } from "lucide-react";
+import { Compass, Loader2, X, Camera } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { markTaskDone } from "../actions";
 import type { HeatmapInstance } from "@/lib/dashboard/queries";
+
+function fileToBase64(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => {
+      const result = reader.result as string;
+      resolve(result.split(",")[1] ?? "");
+    };
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+}
 
 const RADIUS = 90;
 const CIRCUMFERENCE = 2 * Math.PI * RADIUS;
@@ -23,8 +35,11 @@ export function FocusBatchModal({
   const [remaining, setRemaining] = useState(totalSeconds);
   const [phase, setPhase] = useState<Phase>("running");
   const [evidence, setEvidence] = useState("");
+  const [photo, setPhoto] = useState<{ file: File; previewUrl: string } | null>(null);
+  const [photoFeedback, setPhotoFeedback] = useState<string | null>(null);
   const [pointsEarned, setPointsEarned] = useState<number | null>(null);
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
 
   useEffect(() => {
     intervalRef.current = setInterval(() => {
@@ -50,8 +65,12 @@ export function FocusBatchModal({
   async function handleConfirm() {
     setPhase("saving");
     try {
-      const result = await markTaskDone(instance.id, evidence);
+      const evidencePhoto = photo
+        ? { base64Data: await fileToBase64(photo.file), mimeType: photo.file.type }
+        : undefined;
+      const result = await markTaskDone(instance.id, evidence, evidencePhoto);
       setPointsEarned(result.points);
+      setPhotoFeedback(result.photoFeedback);
       setPhase("saved");
     } catch {
       setPhase("done-pending-confirm");
@@ -134,6 +153,46 @@ export function FocusBatchModal({
             onChange={(e) => setEvidence(e.target.value)}
             className="min-h-24"
           />
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="image/*"
+            capture="environment"
+            className="hidden"
+            onChange={(e) => {
+              const file = e.target.files?.[0];
+              if (!file) return;
+              setPhoto({ file, previewUrl: URL.createObjectURL(file) });
+            }}
+          />
+          {photo ? (
+            <div className="relative w-full max-w-[160px] self-center">
+              <img
+                src={photo.previewUrl}
+                alt="Evidencia"
+                className="w-full rounded-lg border border-border"
+              />
+              <button
+                type="button"
+                onClick={() => setPhoto(null)}
+                className="absolute -right-2 -top-2 flex h-6 w-6 items-center justify-center rounded-full bg-background text-muted-foreground shadow ring-1 ring-border hover:text-foreground"
+                aria-label="Quitar foto"
+              >
+                <X className="h-3.5 w-3.5" />
+              </button>
+            </div>
+          ) : (
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              className="gap-1.5"
+              onClick={() => fileInputRef.current?.click()}
+            >
+              <Camera className="h-3.5 w-3.5" />
+              Agregar foto
+            </Button>
+          )}
           <Button
             onClick={handleConfirm}
             disabled={phase === "saving"}
@@ -156,9 +215,15 @@ export function FocusBatchModal({
           <h2 className="text-[22px] font-semibold tracking-tight">
             ¡Sumaste {pointsEarned} pts!
           </h2>
-          <p className="max-w-xs text-[15px] text-muted-foreground">
-            Un paso más en tu expedición.
-          </p>
+          {photoFeedback ? (
+            <p className="max-w-xs rounded-lg bg-muted p-3 text-[14px] text-muted-foreground">
+              {photoFeedback}
+            </p>
+          ) : (
+            <p className="max-w-xs text-[15px] text-muted-foreground">
+              Un paso más en tu expedición.
+            </p>
+          )}
           <Button onClick={onClose} variant="outline">
             Volver al mapa
           </Button>

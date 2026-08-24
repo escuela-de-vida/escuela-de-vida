@@ -129,3 +129,58 @@ export async function overrideModuleScore(params: {
 
   revalidatePath("/admin/evidencias");
 }
+
+export async function overridePhotoScore(params: {
+  submissionId: string;
+  studentId: string;
+  taskInstanceId: string;
+  newPoints: number;
+  comment: string;
+}) {
+  const profile = await requireAdmin();
+  const supabase = await createClient();
+  const admin = createAdminClient();
+
+  const { data: priorEntries } = await supabase
+    .from("points_ledger")
+    .select("points")
+    .eq("student_id", params.studentId)
+    .eq("source_type", "task")
+    .eq("source_id", params.taskInstanceId);
+
+  const currentlyAwarded = (priorEntries ?? []).reduce(
+    (sum, e) => sum + e.points,
+    0,
+  );
+  const delta = params.newPoints - currentlyAwarded;
+
+  if (delta !== 0) {
+    const { error: ledgerError } = await admin.from("points_ledger").insert({
+      family_id: profile.family_id,
+      student_id: params.studentId,
+      source_type: "manual_admin",
+      source_id: params.taskInstanceId,
+      points: delta,
+      reason: `Corrección de admin sobre evidencia de foto: ${params.comment || "sin comentario"}`,
+    });
+    if (ledgerError) throw new Error(ledgerError.message);
+  }
+
+  const { error } = await supabase
+    .from("submissions")
+    .update({
+      admin_override_score: params.newPoints,
+      admin_override_comment: params.comment || null,
+      reviewed_by: profile.id,
+    })
+    .eq("id", params.submissionId);
+
+  if (error) throw new Error(error.message);
+
+  await supabase
+    .from("task_instances")
+    .update({ points_awarded: params.newPoints })
+    .eq("id", params.taskInstanceId);
+
+  revalidatePath("/admin/evidencias");
+}
