@@ -14,7 +14,7 @@ export function getGeminiClient(): GoogleGenAI | null {
   return client;
 }
 
-export const AI_MODEL = "gemini-2.5-flash";
+export const AI_MODEL = "gemini-3.6-flash";
 
 /**
  * Pide a Gemini un objeto JSON estructurado (responseMimeType: json) y lo
