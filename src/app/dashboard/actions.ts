@@ -96,3 +96,18 @@ export async function markTaskDone(
   revalidatePath("/dashboard");
   return { points };
 }
+
+export async function markNotificationRead(notificationId: string) {
+  const profile = await getCurrentProfile();
+  if (!profile) throw new Error("No autorizado");
+  if (notificationId.startsWith("local-")) return;
+
+  const supabase = await createClient();
+  await supabase
+    .from("notifications")
+    .update({ read_at: new Date().toISOString() })
+    .eq("id", notificationId)
+    .eq("user_id", profile.id);
+
+  revalidatePath("/dashboard");
+}

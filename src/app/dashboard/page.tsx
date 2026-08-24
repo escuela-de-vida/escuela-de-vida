@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
 import Link from "next/link";
-import { Compass, Flame, Settings, Sparkles, GraduationCap, Trophy } from "lucide-react";
+import { Compass, Flame, Settings, Sparkles, GraduationCap, Trophy, Mail } from "lucide-react";
 import { buttonVariants } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { SignOutButton } from "./sign-out-button";
@@ -21,6 +21,8 @@ import { DayView } from "./heatmap/day-view";
 import { WeekView } from "./heatmap/week-view";
 import { MonthView } from "./heatmap/month-view";
 import { YearView } from "./heatmap/year-view";
+import { MentorBanner } from "./mentor-banner";
+import { getOrCreateDailyMessage } from "@/lib/mentor/daily-message";
 
 function resolveRange(tf: Timeframe, today: Date) {
   switch (tf) {
@@ -109,10 +111,11 @@ export default async function DashboardPage({
   const today = new Date();
   const { from, to } = resolveRange(tf, today);
 
-  const [instances, points, streak] = await Promise.all([
+  const [instances, points, streak, mentorMessage] = await Promise.all([
     getTaskInstancesForRange(profile.id, from, to),
     getPointsTotal(profile.id),
     getStreak(profile.id),
+    getOrCreateDailyMessage(profile.id, profile.family_id, profile.display_name),
   ]);
 
   return (
@@ -156,11 +159,25 @@ export default async function DashboardPage({
           >
             <Trophy className="h-3.5 w-3.5" />
           </Link>
+          <Link
+            href="/buzon"
+            aria-label="Buzón de sugerencias"
+            className="flex h-7 w-7 items-center justify-center rounded-full text-muted-foreground transition-spring duration-200 hover:bg-muted hover:text-foreground"
+          >
+            <Mail className="h-3.5 w-3.5" />
+          </Link>
           <SignOutButton />
         </div>
       </header>
 
       <main className="mx-auto flex w-full max-w-5xl flex-1 flex-col gap-6 px-8 py-10">
+        <MentorBanner
+          id={mentorMessage.id}
+          title={mentorMessage.title}
+          body={mentorMessage.body}
+          initiallyRead={!!mentorMessage.read_at}
+        />
+
         <TimeframeTabs active={tf} />
 
         {tf === "dia" && <DayView instances={instances} />}
