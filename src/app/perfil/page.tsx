@@ -1,12 +1,14 @@
 import { redirect } from "next/navigation";
 import Link from "next/link";
-import { ArrowLeft, Flame, Sparkles } from "lucide-react";
+import { ArrowLeft, Flame, Sparkles, Download } from "lucide-react";
 import { getCurrentProfile } from "@/lib/auth/current-user";
 import { getPointsTotal, getStreak } from "@/lib/dashboard/queries";
 import { getRank, getNextRank } from "@/lib/gamification/ranks";
 import { createClient } from "@/lib/supabase/server";
 import { Progress } from "@/components/ui/progress";
 import { Card, CardContent } from "@/components/ui/card";
+import { buttonVariants } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 
 export default async function PerfilPage() {
   const profile = await getCurrentProfile();
@@ -81,6 +83,14 @@ export default async function PerfilPage() {
             </CardContent>
           </Card>
         </div>
+
+        <a
+          href={`/api/bitacora/${profile.id}`}
+          className={cn(buttonVariants({ variant: "outline" }), "gap-2 self-center")}
+        >
+          <Download className="h-4 w-4" />
+          Descargar mi bitácora (PDF)
+        </a>
 
         <div className="flex flex-col gap-3">
           <h2 className="text-[15px] font-medium text-muted-foreground">
