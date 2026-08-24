@@ -9,6 +9,7 @@ export type HeatmapInstance = {
   task: {
     id: string;
     title: string;
+    description: string | null;
     points_base: number;
     duration_minutes: number | null;
     category: { id: string; name: string; color: string } | null;
@@ -25,7 +26,7 @@ export async function getTaskInstancesForRange(
     .from("task_instances")
     .select(
       `id, scheduled_date, status, points_awarded,
-       task_templates ( id, title, points_base, duration_minutes,
+       task_templates ( id, title, description, points_base, duration_minutes,
          categories ( id, name, color ) )`,
     )
     .eq("student_id", studentId)
@@ -54,6 +55,7 @@ export async function getTaskInstancesForRange(
         ? {
             id: template.id,
             title: template.title,
+            description: template.description,
             points_base: template.points_base,
             duration_minutes: template.duration_minutes,
             category: category

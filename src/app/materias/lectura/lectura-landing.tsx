@@ -1,7 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { BookOpen, CheckCircle2, Loader2 } from "lucide-react";
+import { fireConfetti } from "@/lib/feedback/confetti";
+import { playSuccessSound, playSubtleSound } from "@/lib/feedback/sound";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -44,6 +46,17 @@ export function LecturaLanding({
     pending: boolean;
     feedback: string | null;
   } | null>(null);
+
+  useEffect(() => {
+    if (!result) return;
+    if (result.points >= 10) {
+      fireConfetti(color);
+      playSuccessSound();
+    } else {
+      playSubtleSound();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [result]);
 
   async function handleStart(book: BookWithProgress) {
     setBusyId(book.id);

@@ -957,6 +957,7 @@ export type Database = {
           id: string
           points_base: number
           recurrence: string
+          recurrence_days: number[] | null
           title: string
           track_id: string | null
         }
@@ -971,6 +972,7 @@ export type Database = {
           id?: string
           points_base?: number
           recurrence: string
+          recurrence_days?: number[] | null
           title: string
           track_id?: string | null
         }
@@ -985,6 +987,7 @@ export type Database = {
           id?: string
           points_base?: number
           recurrence?: string
+          recurrence_days?: number[] | null
           title?: string
           track_id?: string | null
         }

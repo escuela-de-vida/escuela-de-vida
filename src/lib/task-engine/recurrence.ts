@@ -4,12 +4,25 @@
 // sola — son tareas que el alumno dispara cuando quiere (ej. "ayudar a
 // alguien").
 //
-// Los días semanales/mensuales son un ancla razonable, no una fecha exacta
-// impuesta por los padres — el admin puede afinar el texto de recurrencia
-// más adelante si necesita otro día.
+// `explicitDays` (task_templates.recurrence_days) permite fijar en qué
+// día(s) de la semana cae ESTA tarea puntual — necesario porque, sin esto,
+// TODAS las tareas "Semanal" caerían el mismo día (todas anclan a lunes),
+// TODAS las "2x/semana" a lunes+jueves, etc., y la semana entera se
+// sentiría volcada en uno o dos días en vez de repartida (sesión de
+// ajustes). Si no se especifica, cae al ancla histórica de esa
+// recurrencia — mantiene retrocompatibilidad con tareas ya creadas.
 
-export function shouldGenerateToday(recurrence: string, date: Date): boolean {
+export function shouldGenerateToday(
+  recurrence: string,
+  date: Date,
+  explicitDays?: number[] | null,
+): boolean {
   const day = date.getDay(); // 0 = domingo … 6 = sábado
+
+  if (explicitDays && explicitDays.length > 0) {
+    return explicitDays.includes(day);
+  }
+
   const MONDAY = 1;
   const WEDNESDAY = 3;
   const THURSDAY = 4;

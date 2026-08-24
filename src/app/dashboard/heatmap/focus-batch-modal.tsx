@@ -6,6 +6,9 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { markTaskDone } from "../actions";
 import type { HeatmapInstance } from "@/lib/dashboard/queries";
+import { DictationTask } from "./dictation-task";
+import { fireConfetti } from "@/lib/feedback/confetti";
+import { playSuccessSound, playSubtleSound } from "@/lib/feedback/sound";
 
 function fileToBase64(file: File): Promise<string> {
   return new Promise((resolve, reject) => {
@@ -31,6 +34,7 @@ export function FocusBatchModal({
   instance: HeatmapInstance;
   onClose: () => void;
 }) {
+  const isDictation = instance.task?.title === "Mecanografía y dictado";
   const totalSeconds = Math.max((instance.task?.duration_minutes ?? 25) * 60, 1);
   const [remaining, setRemaining] = useState(totalSeconds);
   const [phase, setPhase] = useState<Phase>("running");
@@ -38,10 +42,12 @@ export function FocusBatchModal({
   const [photo, setPhoto] = useState<{ file: File; previewUrl: string } | null>(null);
   const [photoFeedback, setPhotoFeedback] = useState<string | null>(null);
   const [pointsEarned, setPointsEarned] = useState<number | null>(null);
+  const [typingResult, setTypingResult] = useState<{ wpm: number; accuracyPct: number } | null>(null);
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
   useEffect(() => {
+    if (isDictation) return;
     intervalRef.current = setInterval(() => {
       setRemaining((prev) => {
         if (prev <= 1) {
@@ -61,6 +67,17 @@ export function FocusBatchModal({
   const seconds = remaining % 60;
   const progress = 1 - remaining / totalSeconds;
   const color = instance.task?.category?.color ?? "var(--category-conocimiento)";
+
+  useEffect(() => {
+    if (phase !== "saved") return;
+    if (pointsEarned && pointsEarned >= 10) {
+      fireConfetti(color);
+      playSuccessSound();
+    } else {
+      playSubtleSound();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [phase]);
 
   async function handleConfirm() {
     setPhase("saving");
@@ -87,7 +104,7 @@ export function FocusBatchModal({
         <X className="h-5 w-5" />
       </button>
 
-      {phase === "running" && (
+      {phase === "running" && isDictation && (
         <div className="flex flex-col items-center gap-8">
           <div
             className="flex h-14 w-14 items-center justify-center rounded-full"
@@ -95,9 +112,34 @@ export function FocusBatchModal({
           >
             <Compass className="h-7 w-7 text-white" strokeWidth={1.75} />
           </div>
-          <p className="text-[17px] font-medium text-muted-foreground">
-            {instance.task?.title}
-          </p>
+          <DictationTask
+            taskInstanceId={instance.id}
+            color={color}
+            onDone={(result) => {
+              setPointsEarned(result.points);
+              setTypingResult({ wpm: result.wpm, accuracyPct: result.accuracyPct });
+              setPhase("saved");
+            }}
+          />
+        </div>
+      )}
+
+      {phase === "running" && !isDictation && (
+        <div className="flex flex-col items-center gap-8">
+          <div
+            className="flex h-14 w-14 items-center justify-center rounded-full"
+            style={{ background: color }}
+          >
+            <Compass className="h-7 w-7 text-white" strokeWidth={1.75} />
+          </div>
+          <div className="flex flex-col items-center gap-1.5 text-center">
+            <p className="text-[17px] font-medium">{instance.task?.title}</p>
+            {instance.task?.description && (
+              <p className="max-w-xs text-[14px] text-muted-foreground">
+                {instance.task.description}
+              </p>
+            )}
+          </div>
           <div className="relative flex h-56 w-56 items-center justify-center">
             <svg className="h-full w-full -rotate-90" viewBox="0 0 200 200">
               <circle
@@ -215,7 +257,11 @@ export function FocusBatchModal({
           <h2 className="text-[22px] font-semibold tracking-tight">
             ¡Sumaste {pointsEarned} pts!
           </h2>
-          {photoFeedback ? (
+          {typingResult ? (
+            <p className="max-w-xs text-[15px] text-muted-foreground">
+              {typingResult.wpm} PPM · {typingResult.accuracyPct}% de precisión
+            </p>
+          ) : photoFeedback ? (
             <p className="max-w-xs rounded-lg bg-muted p-3 text-[14px] text-muted-foreground">
               {photoFeedback}
             </p>

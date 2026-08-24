@@ -25,14 +25,16 @@ export async function generateInstancesForToday(
 
   const { data: templates } = await supabase
     .from("task_templates")
-    .select("id, family_id, recurrence, track_id")
+    .select("id, family_id, recurrence, recurrence_days, track_id")
     .eq("active", true);
 
   if (!templates || templates.length === 0) {
     return { created: 0, skippedExisting: 0, templatesConsidered: 0 };
   }
 
-  const due = templates.filter((t) => shouldGenerateToday(t.recurrence, today));
+  const due = templates.filter((t) =>
+    shouldGenerateToday(t.recurrence, today, t.recurrence_days),
+  );
   if (due.length === 0) {
     return { created: 0, skippedExisting: 0, templatesConsidered: templates.length };
   }

@@ -8,6 +8,7 @@ export type DailyMessage = {
   id: string;
   title: string;
   body: string;
+  quote: string;
   read_at: string | null;
 };
 
@@ -42,6 +43,7 @@ export async function getOrCreateDailyMessage(
       id: existing.id,
       title: existing.title,
       body: existing.body ?? "",
+      quote: quoteOfTheDay(today),
       read_at: existing.read_at,
     };
   }
@@ -96,13 +98,20 @@ export async function getOrCreateDailyMessage(
     .single();
 
   if (error || !created) {
-    return { id: `local-${todayISO}`, title: `Buen día, ${firstName}`, body, read_at: null };
+    return {
+      id: `local-${todayISO}`,
+      title: `Buen día, ${firstName}`,
+      body,
+      quote,
+      read_at: null,
+    };
   }
 
   return {
     id: created.id,
     title: created.title,
     body: created.body ?? body,
+    quote,
     read_at: created.read_at,
   };
 }

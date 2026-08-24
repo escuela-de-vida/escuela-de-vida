@@ -51,6 +51,22 @@ const RECURRENCE_OPTIONS = [
   "Oportunista",
 ];
 
+const WEEKDAYS = [
+  { value: 1, label: "Lun" },
+  { value: 2, label: "Mar" },
+  { value: 3, label: "Mié" },
+  { value: 4, label: "Jue" },
+  { value: 5, label: "Vie" },
+  { value: 6, label: "Sáb" },
+  { value: 0, label: "Dom" },
+];
+
+function needsDayPicker(recurrence: string) {
+  return ["2x/semana", "2-3x/semana", "Semanal", "Sem/mensual"].includes(
+    recurrence,
+  );
+}
+
 function emptyForm(categoryId: string): TaskTemplateInput {
   return {
     category_id: categoryId,
@@ -59,6 +75,7 @@ function emptyForm(categoryId: string): TaskTemplateInput {
     points_base: 10,
     duration_minutes: 25,
     recurrence: "Diaria",
+    recurrence_days: null,
     focus_batch_required: true,
     active: true,
   };
@@ -97,6 +114,7 @@ export function TaskManager({
       points_base: task.points_base,
       duration_minutes: task.duration_minutes,
       recurrence: task.recurrence,
+      recurrence_days: task.recurrence_days,
       focus_batch_required: task.focus_batch_required,
       active: task.active,
     });
@@ -226,7 +244,13 @@ export function TaskManager({
                   <Select
                     value={form.recurrence}
                     onValueChange={(v) =>
-                      setForm({ ...form, recurrence: v ?? form.recurrence })
+                      setForm({
+                        ...form,
+                        recurrence: v ?? form.recurrence,
+                        recurrence_days: needsDayPicker(v ?? form.recurrence)
+                          ? form.recurrence_days
+                          : null,
+                      })
                     }
                   >
                     <SelectTrigger>
@@ -242,6 +266,41 @@ export function TaskManager({
                   </Select>
                 </div>
               </div>
+              {needsDayPicker(form.recurrence) && (
+                <div className="flex flex-col gap-2">
+                  <Label>Días de la semana</Label>
+                  <div className="flex flex-wrap gap-1.5">
+                    {WEEKDAYS.map((d) => {
+                      const selected = (form.recurrence_days ?? []).includes(d.value);
+                      return (
+                        <button
+                          key={d.value}
+                          type="button"
+                          onClick={() =>
+                            setForm({
+                              ...form,
+                              recurrence_days: selected
+                                ? (form.recurrence_days ?? []).filter((v) => v !== d.value)
+                                : [...(form.recurrence_days ?? []), d.value],
+                            })
+                          }
+                          className={`rounded-full border px-3 py-1 text-[13px] transition-spring duration-150 ${
+                            selected
+                              ? "border-primary bg-primary/10 text-primary"
+                              : "border-border text-muted-foreground hover:bg-muted"
+                          }`}
+                        >
+                          {d.label}
+                        </button>
+                      );
+                    })}
+                  </div>
+                  <p className="text-[12px] text-muted-foreground">
+                    Si no elegís ninguno, se usa el día por defecto de esta
+                    frecuencia.
+                  </p>
+                </div>
+              )}
               <div className="flex items-center justify-between rounded-lg border border-border px-3 py-2">
                 <Label htmlFor="focus" className="cursor-pointer">
                   Requiere batch de foco

@@ -1,12 +1,14 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Loader2, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { completeModule } from "../actions";
 import type { ModuleWithStatus } from "@/lib/curriculum/types";
+import { fireConfetti } from "@/lib/feedback/confetti";
+import { playSuccessSound, playSubtleSound } from "@/lib/feedback/sound";
 
 export function ModuleInteraction({
   module,
@@ -41,6 +43,17 @@ export function ModuleInteraction({
       setStatus("idle");
     }
   }
+
+  useEffect(() => {
+    if (status !== "done") return;
+    if (pointsEarned && pointsEarned >= 10) {
+      fireConfetti(color);
+      playSuccessSound();
+    } else {
+      playSubtleSound();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [status]);
 
   if (status === "done") {
     return (

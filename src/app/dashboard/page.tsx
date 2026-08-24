@@ -175,6 +175,7 @@ export default async function DashboardPage({
           id={mentorMessage.id}
           title={mentorMessage.title}
           body={mentorMessage.body}
+          quote={mentorMessage.quote}
           initiallyRead={!!mentorMessage.read_at}
         />
 

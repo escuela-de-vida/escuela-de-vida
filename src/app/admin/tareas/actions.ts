@@ -11,6 +11,7 @@ export type TaskTemplateInput = {
   points_base: number;
   duration_minutes: number | null;
   recurrence: string;
+  recurrence_days: number[] | null;
   focus_batch_required: boolean;
   active: boolean;
 };
