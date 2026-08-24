@@ -1,14 +1,14 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { Compass, Loader2, X, Camera } from "lucide-react";
+import { Compass, Loader2, X, Camera, Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { markTaskDone } from "../actions";
 import type { HeatmapInstance } from "@/lib/dashboard/queries";
 import { DictationTask } from "./dictation-task";
 import { fireConfetti } from "@/lib/feedback/confetti";
-import { playSuccessSound, playSubtleSound } from "@/lib/feedback/sound";
+import { playSuccessSound, playSubtleSound, playBellSound } from "@/lib/feedback/sound";
 
 function fileToBase64(file: File): Promise<string> {
   return new Promise((resolve, reject) => {
@@ -43,8 +43,21 @@ export function FocusBatchModal({
   const [photoFeedback, setPhotoFeedback] = useState<string | null>(null);
   const [pointsEarned, setPointsEarned] = useState<number | null>(null);
   const [typingResult, setTypingResult] = useState<{ wpm: number; accuracyPct: number } | null>(null);
+  const [checkedIds, setCheckedIds] = useState<Set<string>>(new Set());
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
+
+  const checklistItems = instance.task?.checklistItems ?? [];
+  const hasChecklist = checklistItems.length > 0;
+
+  function toggleItem(id: string) {
+    setCheckedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  }
 
   useEffect(() => {
     if (isDictation) return;
@@ -53,6 +66,7 @@ export function FocusBatchModal({
         if (prev <= 1) {
           clearInterval(intervalRef.current!);
           setPhase("done-pending-confirm");
+          playBellSound();
           return 0;
         }
         return prev - 1;
@@ -85,7 +99,12 @@ export function FocusBatchModal({
       const evidencePhoto = photo
         ? { base64Data: await fileToBase64(photo.file), mimeType: photo.file.type }
         : undefined;
-      const result = await markTaskDone(instance.id, evidence, evidencePhoto);
+      const result = await markTaskDone(
+        instance.id,
+        evidence,
+        evidencePhoto,
+        hasChecklist ? [...checkedIds] : undefined,
+      );
       setPointsEarned(result.points);
       setPhotoFeedback(result.photoFeedback);
       setPhase("saved");
@@ -134,43 +153,96 @@ export function FocusBatchModal({
           </div>
           <div className="flex flex-col items-center gap-1.5 text-center">
             <p className="text-[17px] font-medium">{instance.task?.title}</p>
-            {instance.task?.description && (
+            {!hasChecklist && instance.task?.description && (
               <p className="max-w-xs text-[14px] text-muted-foreground">
                 {instance.task.description}
               </p>
             )}
           </div>
-          <div className="relative flex h-56 w-56 items-center justify-center">
-            <svg className="h-full w-full -rotate-90" viewBox="0 0 200 200">
-              <circle
-                cx="100"
-                cy="100"
-                r={RADIUS}
-                fill="none"
-                stroke="var(--border)"
-                strokeWidth="8"
-              />
-              <circle
-                cx="100"
-                cy="100"
-                r={RADIUS}
-                fill="none"
-                stroke={color}
-                strokeWidth="8"
-                strokeLinecap="round"
-                strokeDasharray={CIRCUMFERENCE}
-                strokeDashoffset={CIRCUMFERENCE * (1 - progress)}
-                className="transition-all duration-1000 ease-linear"
-              />
-            </svg>
-            <span className="absolute text-[40px] font-semibold tabular-nums tracking-tight">
-              {String(minutes).padStart(2, "0")}:{String(seconds).padStart(2, "0")}
-            </span>
-          </div>
-          <p className="max-w-xs text-center text-sm text-muted-foreground">
-            Pantalla sin distracciones — dedicale este tiempo a la tarea. Kai
-            te acompaña.
-          </p>
+
+          {hasChecklist ? (
+            <div className="flex w-full max-w-sm flex-col gap-4">
+              <p className="text-center text-[13px] tabular-nums text-muted-foreground">
+                {String(minutes).padStart(2, "0")}:{String(seconds).padStart(2, "0")} restantes
+              </p>
+              <div className="flex flex-col gap-2">
+                {checklistItems.map((item) => {
+                  const checked = checkedIds.has(item.id);
+                  return (
+                    <button
+                      key={item.id}
+                      type="button"
+                      onClick={() => toggleItem(item.id)}
+                      className={`flex items-center gap-3 rounded-xl border px-4 py-3 text-left transition-spring duration-150 ${
+                        checked
+                          ? "border-primary bg-primary/10"
+                          : "border-border hover:bg-muted"
+                      }`}
+                    >
+                      <span
+                        className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full border"
+                        style={{
+                          borderColor: checked ? color : "var(--border)",
+                          background: checked ? color : "transparent",
+                        }}
+                      >
+                        {checked && <Check className="h-3.5 w-3.5 text-white" />}
+                      </span>
+                      <span className="flex-1 text-[15px]">{item.label}</span>
+                      <span className="text-[12px] text-muted-foreground">
+                        {item.points} pts
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
+              {checkedIds.size > 0 && (
+                <Button
+                  variant="secondary"
+                  onClick={() => {
+                    if (intervalRef.current) clearInterval(intervalRef.current);
+                    setPhase("done-pending-confirm");
+                  }}
+                >
+                  Ya terminé
+                </Button>
+              )}
+            </div>
+          ) : (
+            <>
+              <div className="relative flex h-56 w-56 items-center justify-center">
+                <svg className="h-full w-full -rotate-90" viewBox="0 0 200 200">
+                  <circle
+                    cx="100"
+                    cy="100"
+                    r={RADIUS}
+                    fill="none"
+                    stroke="var(--border)"
+                    strokeWidth="8"
+                  />
+                  <circle
+                    cx="100"
+                    cy="100"
+                    r={RADIUS}
+                    fill="none"
+                    stroke={color}
+                    strokeWidth="8"
+                    strokeLinecap="round"
+                    strokeDasharray={CIRCUMFERENCE}
+                    strokeDashoffset={CIRCUMFERENCE * (1 - progress)}
+                    className="transition-all duration-1000 ease-linear"
+                  />
+                </svg>
+                <span className="absolute text-[40px] font-semibold tabular-nums tracking-tight">
+                  {String(minutes).padStart(2, "0")}:{String(seconds).padStart(2, "0")}
+                </span>
+              </div>
+              <p className="max-w-xs text-center text-sm text-muted-foreground">
+                Pantalla sin distracciones — dedicale este tiempo a la tarea.
+                Kai te acompaña.
+              </p>
+            </>
+          )}
         </div>
       )}
 
@@ -186,8 +258,10 @@ export function FocusBatchModal({
             ¡Terminaste el batch!
           </h2>
           <p className="text-[15px] text-muted-foreground">
-            {instance.task?.title} — si querés, dejá una nota de lo que
-            hiciste.
+            {instance.task?.title}
+            {hasChecklist
+              ? " — ¿hiciste algo más hoy que no esté en la lista? Contanos."
+              : " — si querés, dejá una nota de lo que hiciste."}
           </p>
           <Textarea
             placeholder="Opcional"

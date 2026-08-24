@@ -51,3 +51,9 @@ export function playRetrySound() {
   tone(392, 0, 0.15, 0.05); // G4
   tone(349.23, 0.1, 0.2, 0.05); // F4
 }
+
+/** Se acabó el tiempo del batch de foco — timbre claro de dos tonos. */
+export function playBellSound() {
+  tone(880, 0, 0.3, 0.09); // A5
+  tone(880, 0.35, 0.3, 0.09); // A5 (segundo golpe)
+}

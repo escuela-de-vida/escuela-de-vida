@@ -36,6 +36,7 @@ import {
   updateTaskTemplate,
   deleteTaskTemplate,
 } from "./actions";
+import { ChecklistManager, type ChecklistItemRow } from "./checklist-manager";
 
 type Category = { id: string; name: string; color: string };
 type TaskTemplate = TaskTemplateInput & { id: string };
@@ -84,9 +85,11 @@ function emptyForm(categoryId: string): TaskTemplateInput {
 export function TaskManager({
   tasks,
   categories,
+  checklistItems,
 }: {
   tasks: TaskTemplate[];
   categories: Category[];
+  checklistItems: ChecklistItemRow[];
 }) {
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<TaskTemplate | null>(null);
@@ -323,6 +326,19 @@ export function TaskManager({
                   onCheckedChange={(v) => setForm({ ...form, active: v })}
                 />
               </div>
+              {editing && (
+                <ChecklistManager
+                  taskTemplateId={editing.id}
+                  items={checklistItems.filter(
+                    (i) => i.task_template_id === editing.id,
+                  )}
+                />
+              )}
+              {!editing && (
+                <p className="text-[12px] text-muted-foreground">
+                  Guardá la tarea primero para poder agregarle un checklist.
+                </p>
+              )}
               {error && <p className="text-sm text-destructive">{error}</p>}
               <DialogFooter>
                 <Button type="submit" disabled={saving} className="gap-2">

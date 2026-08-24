@@ -1,5 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import { toISODate } from "@/lib/dates";
+import { isDueToday, type ChecklistItem } from "@/lib/task-engine/checklist";
 
 export type HeatmapInstance = {
   id: string;
@@ -13,6 +14,7 @@ export type HeatmapInstance = {
     points_base: number;
     duration_minutes: number | null;
     category: { id: string; name: string; color: string } | null;
+    checklistItems: ChecklistItem[];
   } | null;
 };
 
@@ -36,6 +38,34 @@ export async function getTaskInstancesForRange(
 
   if (error || !data) return [];
 
+  const templateIds = [
+    ...new Set(
+      data
+        .map((row) => {
+          const t = Array.isArray(row.task_templates) ? row.task_templates[0] : row.task_templates;
+          return t?.id;
+        })
+        .filter((id): id is string => Boolean(id)),
+    ),
+  ];
+
+  const { data: checklistRows } =
+    templateIds.length > 0
+      ? await supabase
+          .from("task_checklist_items")
+          .select("id, task_template_id, label, points, duration_minutes, recurrence_days")
+          .in("task_template_id", templateIds)
+          .eq("active", true)
+          .order("order_index", { ascending: true })
+      : { data: [] as never[] };
+
+  const itemsByTemplate = new Map<string, typeof checklistRows>();
+  for (const item of checklistRows ?? []) {
+    const list = itemsByTemplate.get(item.task_template_id) ?? [];
+    list.push(item);
+    itemsByTemplate.set(item.task_template_id, list);
+  }
+
   return data.map((row) => {
     const template = Array.isArray(row.task_templates)
       ? row.task_templates[0]
@@ -45,6 +75,18 @@ export async function getTaskInstancesForRange(
         ? template.categories[0]
         : template.categories
       : null;
+
+    const instanceDate = new Date(`${row.scheduled_date}T00:00:00`);
+    const checklistItems: ChecklistItem[] = template
+      ? (itemsByTemplate.get(template.id) ?? [])
+          .filter((item) => isDueToday(item.recurrence_days, instanceDate))
+          .map((item) => ({
+            id: item.id,
+            label: item.label,
+            points: item.points,
+            duration_minutes: item.duration_minutes,
+          }))
+      : [];
 
     return {
       id: row.id,
@@ -56,11 +98,18 @@ export async function getTaskInstancesForRange(
             id: template.id,
             title: template.title,
             description: template.description,
-            points_base: template.points_base,
-            duration_minutes: template.duration_minutes,
+            points_base:
+              checklistItems.length > 0
+                ? checklistItems.reduce((sum, i) => sum + i.points, 0)
+                : template.points_base,
+            duration_minutes:
+              checklistItems.length > 0
+                ? checklistItems.reduce((sum, i) => sum + i.duration_minutes, 0) || template.duration_minutes
+                : template.duration_minutes,
             category: category
               ? { id: category.id, name: category.name, color: category.color }
               : null,
+            checklistItems,
           }
         : null,
     };

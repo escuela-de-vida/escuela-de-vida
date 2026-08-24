@@ -13,6 +13,7 @@ import { evaluateTaskPhoto } from "@/lib/ai/evaluate-photo";
 import { computeTypingMetrics } from "@/lib/typing/metrics";
 import { quoteOfTheDay, quotePhrase } from "@/lib/mentor/quotes";
 import { startOfDay } from "@/lib/dates";
+import { getTodaysChecklistItems } from "@/lib/task-engine/checklist";
 
 const QUOTE_REWRITE_POINTS = 3;
 const QUOTE_REWRITE_REASON = "Reescritura de la frase del día";
@@ -21,6 +22,7 @@ export async function markTaskDone(
   taskInstanceId: string,
   evidenceText?: string,
   evidencePhoto?: { base64Data: string; mimeType: string },
+  checkedItemIds?: string[],
 ) {
   const profile = await getCurrentProfile();
   if (!profile || profile.role !== "student") {
@@ -48,7 +50,21 @@ export async function markTaskDone(
   const template = Array.isArray(instance.task_templates)
     ? instance.task_templates[0]
     : instance.task_templates;
-  const pointsBase = template?.points_base ?? 0;
+
+  // Si la tarea tiene checklist configurado (Higiene, Cuerpo, etc.), los
+  // puntos son la suma de lo que el alumno tildó — no todo o nada. Sin
+  // checklist, sigue siendo el punteo simple de siempre.
+  const todaysItems = await getTodaysChecklistItems(
+    supabase,
+    instance.template_id,
+    new Date(`${instance.scheduled_date}T00:00:00`),
+  );
+  const pointsBase =
+    todaysItems.length > 0
+      ? todaysItems
+          .filter((item) => checkedItemIds?.includes(item.id))
+          .reduce((sum, item) => sum + item.points, 0)
+      : (template?.points_base ?? 0);
 
   const originalDate = await findOriginalScheduledDate(
     supabase,

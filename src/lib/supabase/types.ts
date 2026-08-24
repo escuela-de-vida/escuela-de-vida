@@ -874,6 +874,60 @@ export type Database = {
           },
         ]
       }
+      task_checklist_items: {
+        Row: {
+          active: boolean
+          created_at: string
+          duration_minutes: number
+          family_id: string
+          id: string
+          label: string
+          order_index: number
+          points: number
+          recurrence_days: number[] | null
+          task_template_id: string
+        }
+        Insert: {
+          active?: boolean
+          created_at?: string
+          duration_minutes?: number
+          family_id: string
+          id?: string
+          label: string
+          order_index?: number
+          points?: number
+          recurrence_days?: number[] | null
+          task_template_id: string
+        }
+        Update: {
+          active?: boolean
+          created_at?: string
+          duration_minutes?: number
+          family_id?: string
+          id?: string
+          label?: string
+          order_index?: number
+          points?: number
+          recurrence_days?: number[] | null
+          task_template_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "task_checklist_items_family_id_fkey"
+            columns: ["family_id"]
+            isOneToOne: false
+            referencedRelation: "families"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "task_checklist_items_task_template_id_fkey"
+            columns: ["task_template_id"]
+            isOneToOne: false
+            referencedRelation: "task_templates"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       task_instances: {
         Row: {
           completed_at: string | null
