@@ -84,15 +84,22 @@ export function MentorBanner({
 
       {showRewrite && status !== "done" && (
         <form onSubmit={handleRewriteSubmit} className="ml-11 flex flex-col gap-2">
+          <p className="text-[12px] text-muted-foreground">
+            Escribila de nuevo con tus palabras exactas, sin las comillas:
+          </p>
+          <p className="rounded-lg bg-background px-2.5 py-2 text-[13px] italic">
+            {quote}
+          </p>
           <textarea
             value={typed}
             onChange={(e) => setTyped(e.target.value)}
-            placeholder={`Escribí de nuevo: "${quote}"`}
+            onPaste={(e) => e.preventDefault()}
+            placeholder="Escribí acá..."
             className="min-h-16 w-full rounded-lg border border-border bg-background p-2.5 text-[13px] outline-none focus:ring-2 focus:ring-ring"
           />
           {status === "retry" && (
             <p className="text-[12px] text-muted-foreground">
-              Casi — revisá bien la frase y probá de nuevo.
+              Casi — revisá bien la frase (sin comillas) y probá de nuevo.
             </p>
           )}
           <Button

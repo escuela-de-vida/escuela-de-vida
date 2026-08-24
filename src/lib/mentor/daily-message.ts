@@ -2,7 +2,7 @@ import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { getTaskInstancesForRange, getStreak } from "@/lib/dashboard/queries";
 import { addDays, startOfDay, toISODate } from "@/lib/dates";
-import { quoteOfTheDay } from "./quotes";
+import { quoteOfTheDay, quotePhrase } from "./quotes";
 
 export type DailyMessage = {
   id: string;
@@ -43,7 +43,7 @@ export async function getOrCreateDailyMessage(
       id: existing.id,
       title: existing.title,
       body: existing.body ?? "",
-      quote: quoteOfTheDay(today),
+      quote: quotePhrase(quoteOfTheDay(today)),
       read_at: existing.read_at,
     };
   }
@@ -102,7 +102,7 @@ export async function getOrCreateDailyMessage(
       id: `local-${todayISO}`,
       title: `Buen día, ${firstName}`,
       body,
-      quote,
+      quote: quotePhrase(quote),
       read_at: null,
     };
   }
@@ -111,7 +111,7 @@ export async function getOrCreateDailyMessage(
     id: created.id,
     title: created.title,
     body: created.body ?? body,
-    quote,
+    quote: quotePhrase(quote),
     read_at: created.read_at,
   };
 }

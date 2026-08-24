@@ -11,7 +11,7 @@ import { checkAndAwardBadges } from "@/lib/gamification/badges";
 import { uploadEvidencePhoto } from "@/lib/storage/evidence";
 import { evaluateTaskPhoto } from "@/lib/ai/evaluate-photo";
 import { computeTypingMetrics } from "@/lib/typing/metrics";
-import { quoteOfTheDay } from "@/lib/mentor/quotes";
+import { quoteOfTheDay, quotePhrase } from "@/lib/mentor/quotes";
 import { startOfDay } from "@/lib/dates";
 
 const QUOTE_REWRITE_POINTS = 3;
@@ -271,8 +271,12 @@ export async function submitQuoteRewrite(typedText: string) {
 
   if (existing) throw new Error("Ya reescribiste la frase de hoy.");
 
-  const quote = quoteOfTheDay(today);
-  const { accuracyPct } = computeTypingMetrics(quote, typedText.trim(), 1);
+  const quote = quotePhrase(quoteOfTheDay(today));
+  // Saca comillas rectas/tipográficas que el alumno pudo haber copiado del
+  // banner por las dudas (el texto de referencia no las incluye) — no debe
+  // penalizar por algo que ni pedimos escribir.
+  const cleanedTyped = typedText.trim().replace(/^[""'']+|[""'']+$/g, "").trim();
+  const { accuracyPct } = computeTypingMetrics(quote, cleanedTyped, 1);
 
   if (accuracyPct < 85) {
     return { success: false, accuracyPct, points: 0 };

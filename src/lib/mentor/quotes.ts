@@ -28,3 +28,12 @@ export function quoteOfTheDay(date: Date): string {
   const dayOfYear = Math.floor((date.getTime() - start.getTime()) / 86_400_000);
   return QUOTES[dayOfYear % QUOTES.length];
 }
+
+/**
+ * Solo la frase, sin la atribución del autor (" — Fulano") — es lo único
+ * que tiene sentido pedirle al alumno que reescriba para incorporarla; la
+ * cita completa se sigue mostrando con su fuente en el mensaje del día.
+ */
+export function quotePhrase(quote: string): string {
+  return quote.split(" — ")[0].trim();
+}
