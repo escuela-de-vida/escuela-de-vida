@@ -1,12 +1,13 @@
 import { redirect } from "next/navigation";
 import Link from "next/link";
-import { Compass, Shapes, ListTodo, BookOpen, Milestone, Trophy, ClipboardCheck, Mail } from "lucide-react";
+import { Compass, Shapes, ListTodo, BookOpen, Milestone, Trophy, ClipboardCheck, Mail, Dumbbell } from "lucide-react";
 import { getCurrentProfile } from "@/lib/auth/current-user";
 import { Badge } from "@/components/ui/badge";
 
 const NAV = [
   { href: "/admin/categorias", label: "Categorías", icon: Shapes },
   { href: "/admin/tareas", label: "Tareas", icon: ListTodo },
+  { href: "/admin/cuerpo", label: "Cuerpo", icon: Dumbbell },
   { href: "/admin/modulos", label: "Módulos", icon: Milestone },
   { href: "/admin/libros", label: "Libros", icon: BookOpen },
   { href: "/admin/evidencias", label: "Evidencias", icon: ClipboardCheck },

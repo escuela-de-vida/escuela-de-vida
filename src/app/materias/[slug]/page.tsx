@@ -11,6 +11,8 @@ import { ModulePath } from "./module-path";
 import { ModuleInteraction } from "./module-interaction";
 import { LecturaLanding, type BookWithProgress } from "../lectura/lectura-landing";
 import { TypingWidget, type TypingHistoryRow } from "../mecanografia/typing-widget";
+import { CuerpoLanding } from "../cuerpo/cuerpo-landing";
+import { getBodyDashboardData, type BodyDashboardData } from "../cuerpo/queries";
 
 async function getBooksWithProgress(
   familyId: string,
@@ -69,6 +71,7 @@ export default async function MateriaLandingPage({
   const isStudent = profile.role === "student";
   const isLectura = slug === "lectura";
   const isComunicacion = slug === "comunicacion";
+  const isCuerpo = slug === "cuerpo";
 
   const header = (
     <header className="glass-panel sticky top-0 z-10 flex items-center gap-3 px-8 py-4">
@@ -152,6 +155,48 @@ export default async function MateriaLandingPage({
             </p>
           ) : (
             <TypingWidget history={history} color={category.color} />
+          )}
+        </main>
+      </div>
+    );
+  }
+
+  if (isCuerpo) {
+    let dashboardData: BodyDashboardData | null = null;
+    if (isStudent) {
+      const supabase = await createClient();
+      const { data: template } = await supabase
+        .from("task_templates")
+        .select("id")
+        .eq("category_id", category.id)
+        .eq("title", "Cuerpo")
+        .maybeSingle();
+      if (template) {
+        dashboardData = await getBodyDashboardData(category.family_id, profile.id, template.id);
+      }
+    }
+
+    return (
+      <div className="flex min-h-full flex-1 flex-col">
+        {header}
+        <main className="mx-auto flex w-full max-w-3xl flex-1 flex-col gap-6 px-8 py-10">
+          {!isStudent && (
+            <p className="rounded-lg bg-muted px-4 py-3 text-sm text-muted-foreground">
+              Vista de admin — el dashboard de calistenia es para los
+              alumnos. Configurá peso, edad y días de entrenamiento desde{" "}
+              <Link href="/admin/cuerpo" className="underline">
+                /admin/cuerpo
+              </Link>
+              .
+            </p>
+          )}
+          {isStudent && dashboardData && (
+            <CuerpoLanding data={dashboardData} categoryColor={category.color} />
+          )}
+          {isStudent && !dashboardData && (
+            <p className="rounded-lg bg-muted px-4 py-3 text-sm text-muted-foreground">
+              Todavía no hay tarea de Cuerpo configurada para hoy.
+            </p>
           )}
         </main>
       </div>

@@ -98,6 +98,73 @@ export type Database = {
           },
         ]
       }
+      body_workout_sessions: {
+        Row: {
+          created_at: string
+          day_type: string
+          exercises: Json
+          family_id: string
+          felt: string | null
+          honest_effort: boolean | null
+          id: string
+          notes: string | null
+          points_awarded: number
+          rounds_completed: number
+          student_id: string
+          task_instance_id: string
+        }
+        Insert: {
+          created_at?: string
+          day_type: string
+          exercises?: Json
+          family_id: string
+          felt?: string | null
+          honest_effort?: boolean | null
+          id?: string
+          notes?: string | null
+          points_awarded?: number
+          rounds_completed?: number
+          student_id: string
+          task_instance_id: string
+        }
+        Update: {
+          created_at?: string
+          day_type?: string
+          exercises?: Json
+          family_id?: string
+          felt?: string | null
+          honest_effort?: boolean | null
+          id?: string
+          notes?: string | null
+          points_awarded?: number
+          rounds_completed?: number
+          student_id?: string
+          task_instance_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "body_workout_sessions_family_id_fkey"
+            columns: ["family_id"]
+            isOneToOne: false
+            referencedRelation: "families"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "body_workout_sessions_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "body_workout_sessions_task_instance_id_fkey"
+            columns: ["task_instance_id"]
+            isOneToOne: false
+            referencedRelation: "task_instances"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       book_progress: {
         Row: {
           admin_override_comment: string | null
@@ -596,6 +663,51 @@ export type Database = {
           },
           {
             foreignKeyName: "story_bible_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: true
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      student_body_config: {
+        Row: {
+          age_years: number | null
+          days_per_week: number
+          family_id: string
+          id: string
+          student_id: string
+          updated_at: string
+          weight_kg: number | null
+        }
+        Insert: {
+          age_years?: number | null
+          days_per_week?: number
+          family_id: string
+          id?: string
+          student_id: string
+          updated_at?: string
+          weight_kg?: number | null
+        }
+        Update: {
+          age_years?: number | null
+          days_per_week?: number
+          family_id?: string
+          id?: string
+          student_id?: string
+          updated_at?: string
+          weight_kg?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "student_body_config_family_id_fkey"
+            columns: ["family_id"]
+            isOneToOne: false
+            referencedRelation: "families"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "student_body_config_student_id_fkey"
             columns: ["student_id"]
             isOneToOne: true
             referencedRelation: "users"

@@ -57,3 +57,13 @@ export function playBellSound() {
   tone(880, 0, 0.3, 0.09); // A5
   tone(880, 0.35, 0.3, 0.09); // A5 (segundo golpe)
 }
+
+/** Tick del conteo 3, 2, 1 antes de arrancar un ejercicio o serie. */
+export function playCountInTick() {
+  tone(660, 0, 0.1, 0.06);
+}
+
+/** Cambio de ejercicio dentro de la rutina guiada — un pulso corto y neutro. */
+export function playTransitionSound() {
+  tone(494, 0, 0.12, 0.06); // B4
+}
